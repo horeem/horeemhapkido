@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>사마귀 전사 대장간 & 보스 사냥터 RPG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      max-width: 100vw;
+      background-color: #05070d;
+      overflow: hidden;
+      font-family: 'Inter', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      color: #f1f5f9;
+    }
+
+    #app-shell {
+      width: 100%;
+      max-width: 540px;
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: #0a0f1c;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.95);
+    }
+
+    /* 상단 강화창 패널 (1.5배 확대) */
+    #blacksmith-panel {
+      flex: 0 0 auto;
+      background:
+        radial-gradient(circle at 14% 45%, rgba(132, 204, 22, 0.22), rgba(249, 115, 22, 0.12) 48%, rgba(11, 15, 28, 0.98) 82%),
+        linear-gradient(180deg, #161d30 0%, #0e1322 100%);
+      border-bottom: 2px solid #334155;
+      padding: calc(8px + env(safe-area-inset-top)) 10px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .forge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 6px 10px;
+    }
+
+    .forge-body {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .mantis-emblem-box {
+      position: relative;
+      width: 92px;
+      height: 98px;
+      flex-shrink: 0;
+      border-radius: 14px;
+      background: radial-gradient(circle, rgba(132, 204, 22, 0.28), rgba(8, 12, 22, 0.96));
+      border: 2px solid #65a30d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #forge-mantis-svg {
+      width: 82px;
+      height: 86px;
+      z-index: 2;
+    }
+
+    #forge-hammer {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 28px;
+      height: 28px;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: bottom right;
+    }
+
+    .hammer-hit { animation: hammerAnim 0.25s ease-out; }
+    @keyframes hammerAnim {
+      0% { opacity: 1; transform: rotate(35deg) scale(1.1); }
+      50% { opacity: 1; transform: rotate(-42deg) scale(1); }
+      100% { opacity: 0; transform: rotate(0deg) scale(0.9); }
+    }
+
+    .flash-up { animation: flashUpAnim 0.38s ease-out; }
+    @keyframes flashUpAnim {
+      0% { filter: brightness(2.8) drop-shadow(0 0 16px #fde047); transform: scale(1.15); }
+      100% { filter: brightness(1); transform: scale(1); }
+    }
+
+    .shake-box { animation: shakeBoxAnim 0.3s ease-in-out; }
+    @keyframes shakeBoxAnim {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    /* 강화 성공 폭죽 파티클 */
+    .firework-particle {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 30;
+      animation: fireworkBurst 0.6s ease-out forwards;
+    }
+    @keyframes fireworkBurst {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+    }
+
+    /* 강화 실패 검은 연기 효과 */
+    .smoke-particle {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #475569 0%, #0f172a 70%, transparent 100%);
+      pointer-events: none;
+      z-index: 30;
+      animation: smokeRise 0.55s ease-out forwards;
+    }
+    @keyframes smokeRise {
+      0% { transform: translate(-50%, 0) scale(0.5); opacity: 0.9; }
+      100% { transform: translate(calc(-50% + var(--sx)), -45px) scale(2.2); opacity: 0; }
+    }
+
+    .scroll-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 27, 75, 0.85);
+      border: 1px solid #6366f1;
+      border-radius: 9px;
+      padding: 5px 10px;
+      font-size: 11.5px;
+    }
+
+    /* 하단 사냥터 패널 */
+    #hunting-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 5px 8px calc(6px + env(safe-area-inset-bottom));
+      gap: 4px;
+      background: #070b14;
+      overflow: hidden;
+    }
+
+    #band-a-hud {
+      flex: 0 0 auto;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .hp-track {
+      width: 100%;
+      height: 13px;
+      background: #050810;
+      border: 1px solid #475569;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hp-track.is-boss {
+      height: 15px;
+      border-color: #f87171;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.55);
+    }
+
+    #monster-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #dc2626, #f97316);
+      transition: width 0.08s ease-out;
+    }
+
+    #band-b-arena {
+      flex: 1 1 auto;
+      min-height: 0;
+      position: relative;
+      border-radius: 12px;
+      border: 1.5px solid #334155;
+      overflow: hidden;
+      cursor: pointer;
+      transition: background 0.5s ease;
+    }
+
+    /* 1. Stage 1: 비취 숲 (싱그러운 숲과 달빛 안개) */
+    #band-b-arena.theme-forest {
+      background:
+        radial-gradient(circle at 18% 78%, rgba(132, 204, 22, 0.28) 0%, transparent 48%),
+        radial-gradient(circle at 82% 78%, rgba(34, 197, 94, 0.22) 0%, transparent 48%),
+        linear-gradient(180deg, #022c14 0%, #064e3b 72%, #022c14 72%, #01150a 100%);
+    }
+
+    /* 2. Stage 2: 독안개 늪지 (음산한 보랏빛 독안개와 고대 늪) */
+    #band-b-arena.theme-swamp {
+      background:
+        radial-gradient(circle at 22% 75%, rgba(192, 132, 252, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 78% 75%, rgba(147, 51, 234, 0.25) 0%, transparent 50%),
+        linear-gradient(180deg, #1e1b4b 0%, #3b0764 72%, #1e1b4b 72%, #0f0b24 100%);
+    }
+
+    /* 3. Stage 3: 용암 협곡 (타오르는 마그마와 붉은 화염) */
+    #band-b-arena.theme-volcano {
+      background:
+        radial-gradient(circle at 25% 75%, rgba(251, 191, 36, 0.32) 0%, transparent 48%),
+        radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.35) 0%, transparent 48%),
+        linear-gradient(180deg, #450a0a 0%, #7f1d1d 72%, #450a0a 72%, #200404 100%);
+    }
+
+    /* 4. Stage 4: 심연의 마왕성 (마력의 푸른 오로라와 심연) */
+    #band-b-arena.theme-abyss {
+      background:
+        radial-gradient(circle at 20% 75%, rgba(56, 189, 248, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 75%, rgba(99, 102, 241, 0.32) 0%, transparent 50%),
+        linear-gradient(180deg, #030712 0%, #1e1b4b 72%, #030712 72%, #010308 100%);
+    }
+
+    .arena-horizon-line {
+      position: absolute; left: 0; right: 0; top: 72%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      pointer-events: none;
+    }
+
+    .arena-sky-decor {
+      position: absolute; top: 10px; right: 16px; width: 26px; height: 26px;
+      border-radius: 50%; opacity: 0.88; pointer-events: none;
+    }
+    .theme-forest .arena-sky-decor { background: radial-gradient(circle, #fef08a, #eab308); box-shadow: 0 0 14px rgba(250, 204, 21, 0.5); }
+    .theme-swamp .arena-sky-decor { background: radial-gradient(circle, #d8b4fe, #a855f7); box-shadow: 0 0 14px rgba(168, 85, 247, 0.5); }
+    .theme-volcano .arena-sky-decor { background: radial-gradient(circle, #fde047, #f97316); box-shadow: 0 0 16px rgba(249, 115, 22, 0.6); }
+    .theme-abyss .arena-sky-decor { background: radial-gradient(circle, #93c5fd, #3b82f6); box-shadow: 0 0 18px rgba(59, 130, 246, 0.6); }
+
+    .ground-shadow {
+      width: 72%; height: 7px; border-radius: 50%;
+      background: rgba(0, 0, 0, 0.75); margin-top: -4px; filter: blur(2px);
+    }
+
+    #player-fighter {
+      position: absolute; left: 16%; bottom: 14%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 8; transform-origin: bottom center;
+    }
+
+    #player-fighter-svg svg {
+      width: clamp(60px, 15.5vw, 68px);
+      height: clamp(60px, 15.5vw, 68px);
+      filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.92));
+      animation: mantisBreath 2.1s infinite ease-in-out;
+    }
+
+    @keyframes mantisBreath {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(-2px) scaleY(1.02); }
+    }
+
+    #player-fighter.is-attacking {
+      animation: mantisStingAttack 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes mantisStingAttack {
+      0% { transform: translateX(-50%) scale(1, 1) rotate(0deg); }
+      25% { transform: translateX(calc(-50% - 6px)) scale(1.06, 0.91) rotate(-8deg); }
+      58% { transform: translateX(calc(-50% + 14px)) scale(0.96, 1.05) rotate(11deg); }
+      100% { transform: translateX(-50%) scale(1, 1) rotate(0deg); }
+    }
+
+    #enemy-fighter {
+      position: absolute; left: 86%; bottom: 14%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 7; will-change: left;
+    }
+
+    #enemy-fighter-svg {
+      width: clamp(56px, 14.5vw, 64px);
+      height: clamp(56px, 14.5vw, 64px);
+      display: flex; align-items: center; justify-content: center;
+      animation: enemyFloat 1.9s infinite ease-in-out;
+    }
+
+    #enemy-fighter.is-boss #enemy-fighter-svg {
+      width: clamp(84px, 21vw, 96px);
+      height: clamp(84px, 21vw, 96px);
+    }
+
+    #enemy-fighter.is-walking #enemy-fighter-svg {
+      animation: enemyWalkBounce 0.34s infinite ease-in-out;
+    }
+
+    @keyframes enemyWalkBounce {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      50% { transform: translateY(-5px) rotate(3deg); }
+    }
+
+    #enemy-fighter-svg svg {
+      width: 100%; height: 100%;
+      filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.94));
+    }
+
+    .enemy-hit-flash { animation: enemyHitAnim 0.18s ease-out !important; }
+    @keyframes enemyHitAnim {
+      0% { transform: translateX(0) scale(1); filter: brightness(2.6); }
+      45% { transform: translateX(8px) scale(0.92); filter: brightness(2.6); }
+      100% { transform: translateX(0) scale(1); filter: brightness(1); }
+    }
+
+    .step-dust {
+      position: absolute; bottom: 13%; width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(226, 232, 240, 0.55); pointer-events: none;
+      animation: dustPuff 0.45s ease-out forwards;
+    }
+    @keyframes dustPuff {
+      0% { opacity: 0.85; transform: translate(-50%, 0) scale(0.5); }
+      100% { opacity: 0; transform: translate(calc(-50% + 12px), -10px) scale(1.5); }
+    }
+
+    #vfx-layer {
+      position: absolute; inset: 0; pointer-events: none; z-index: 25; overflow: hidden;
+    }
+
+    /* 플레이어 얼굴(머리) 높이인 45% 위치에서 발사되도록 수정 */
+    .muzzle-flash {
+      position: absolute; bottom: var(--shot-bottom, 45%); left: 16%; width: 22px; height: 22px; border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, #bef264 45%, transparent 75%);
+      transform: translate(-50%, 50%); animation: muzzlePop 0.18s ease-out forwards;
+    }
+    @keyframes muzzlePop {
+      0% { opacity: 1; transform: translate(-50%, 50%) scale(0.4); }
+      100% { opacity: 0; transform: translate(-50%, 50%) scale(1.6); }
+    }
+
+    .venom-dart {
+      position: absolute; bottom: var(--shot-bottom, 45%); width: 38px; height: 12px;
+      transform: translate(-50%, 50%); transition: left 0.18s linear;
+      filter: drop-shadow(0 0 7px #a3e635); z-index: 26;
+    }
+
+    .venom-splash {
+      position: absolute; bottom: 23%; width: 48px; height: 48px;
+      transform: translate(-50%, 50%); animation: splashBurst 0.28s ease-out forwards;
+    }
+    @keyframes splashBurst {
+      0% { opacity: 1; transform: translate(-50%, 50%) scale(0.45); }
+      100% { opacity: 0; transform: translate(-50%, 50%) scale(1.45); }
+    }
+
+    .dmg-float {
+      position: absolute; font-weight: 900; pointer-events: none;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.98);
+      animation: dmgFloatUp 0.78s cubic-bezier(0.16, 1, 0.3, 1) forwards; white-space: nowrap;
+    }
+    @keyframes dmgFloatUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.85); }
+      25% { opacity: 1; transform: translate(-50%, -12px) scale(1.15); }
+      100% { opacity: 0; transform: translate(-50%, -42px) scale(0.95); }
+    }
+
+    .skill-toast-banner {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(90deg, transparent, rgba(22, 101, 52, 0.94), transparent);
+      border-top: 1px solid #bef264; border-bottom: 1px solid #bef264;
+      padding: 2px 22px; font-size: 11px; font-weight: 900; color: #fef08a; white-space: nowrap;
+      animation: skillBannerAnim 0.8s forwards;
+    }
+    @keyframes skillBannerAnim {
+      0% { opacity: 0; transform: translate(-50%, 4px) scale(0.85); }
+      20% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+      80% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -6px) scale(0.95); }
+    }
+
+    .lightning-beam {
+      position: absolute; top: 0; width: 10px; height: 82%; transform: translateX(-50%);
+      background: linear-gradient(180deg, #e0f2fe, #38bdf8, #fff);
+      box-shadow: 0 0 20px #38bdf8; animation: beamFade 0.3s ease-out forwards;
+    }
+    @keyframes beamFade {
+      0% { opacity: 1; transform: translateX(-50%) scaleX(1.5); }
+      100% { opacity: 0; transform: translateX(-50%) scaleX(0.2); }
+    }
+
+    .celestial-needle {
+      position: absolute; top: -20px; font-size: 36px; transform: translateX(-50%);
+      filter: drop-shadow(0 0 14px #bef264); animation: needleDrop 0.38s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+    }
+    @keyframes needleDrop {
+      0% { opacity: 0; transform: translate(-50%, -10px) rotate(135deg) scale(1.2); }
+      60% { opacity: 1; transform: translate(-50%, 75px) rotate(135deg) scale(1.05); }
+      100% { opacity: 0; transform: translate(-50%, 85px) rotate(135deg) scale(1.3); }
+    }
+
+    #band-c-dock {
+      flex: 0 0 auto; display: flex; flex-direction: column; gap: 3px;
+    }
+
+    .skill-strip {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; height: 24px;
+    }
+
+    .skill-pill {
+      border-radius: 7px; border: 1px solid #334155; background: #131a2b;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      font-size: 8.5px; font-weight: 800; cursor: pointer; padding: 0 2px; overflow: hidden;
+    }
+    .skill-pill.unlocked {
+      background: linear-gradient(180deg, #14532d 0%, #166534 100%);
+      border-color: #84cc16; color: #f8fafc;
+    }
+    .skill-pill.locked {
+      opacity: 0.42; filter: grayscale(0.85); color: #94a3b8;
+    }
+
+    .ctrl-strip {
+      display: flex; align-items: center; gap: 4px; height: 32px;
+    }
+
+    .mini-ctrl-btn {
+      flex: 1; height: 100%; border-radius: 9px; border: 1px solid transparent;
+      font-size: clamp(9.5px, 2.6vw, 11px); font-weight: 900; color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap; padding: 0 3px;
+    }
+    .mini-ctrl-btn:active { transform: scale(0.95); }
+
+    #top-toast {
+      position: absolute; top: calc(8px + env(safe-area-inset-top)); left: 50%;
+      transform: translate(-50%, -12px); background: rgba(15, 23, 42, 0.96);
+      border: 1.5px solid #a3e635; color: #f8fafc; padding: 5px 14px;
+      border-radius: 999px; font-size: 11.5px; font-weight: 900;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85); opacity: 0; pointer-events: none;
+      z-index: 100; white-space: nowrap; transition: opacity 0.18s, transform 0.18s;
+    }
+    #top-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    #reset-modal {
+      position: absolute; inset: 0; background: rgba(0, 0, 0, 0.82);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200;
+    }
+    #reset-modal.open { display: flex; }
+  </style>
+</head>
+<body>
+  <div id="app-shell">
+    <!-- 상단 강화창 패널 -->
+    <section id="blacksmith-panel">
+      <div class="forge-header">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="ui-enh-badge" class="bg-lime-600 border border-lime-300 text-white text-[13px] font-black px-2 py-0.5 rounded-md">+0</span>
+          <span id="ui-weapon-name" class="text-[14px] font-black text-lime-400 truncate">녹색 사마귀 전사</span>
+          <span id="ui-tier-grade" class="text-[11px] font-bold text-slate-400 hidden sm:inline">· 초급 키틴질</span>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button id="btn-sound" class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-600 text-[13px] flex items-center justify-center" aria-label="효과음 토글">🔊</button>
+        </div>
+      </div>
+
+      <div class="forge-body">
+        <div class="mantis-emblem-box" id="emblem-box">
+          <svg id="forge-hammer" viewBox="0 0 100 100">
+            <rect x="44" y="38" width="12" height="58" rx="4" fill="#92400e" stroke="#451a03" stroke-width="3"/>
+            <rect x="20" y="14" width="60" height="30" rx="6" fill="#94a3b8" stroke="#1e293b" stroke-width="4"/>
+          </svg>
+          <div id="forge-mantis-svg"></div>
+        </div>
+
+        <div class="flex-1 flex flex-col justify-between gap-2 min-w-0">
+          <div class="grid grid-cols-4 gap-1.5 text-center">
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg px-1 py-1.5">
+              <div class="text-[9.5px] text-slate-400 font-bold leading-tight mb-0.5">독침 공격력</div>
+              <div id="ui-stat-atk" class="text-[13px] font-black text-lime-400 leading-tight">18</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg px-1 py-1.5">
+              <div class="text-[9.5px] text-slate-400 font-bold leading-tight mb-0.5">치명타</div>
+              <div id="ui-stat-crit" class="text-[12px] font-black text-amber-400 leading-tight">10%/150%</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg px-1 py-1.5">
+              <div class="text-[9.5px] text-slate-400 font-bold leading-tight mb-0.5">성공률</div>
+              <div id="ui-stat-rate" class="text-[13px] font-black text-sky-400 leading-tight">100%</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-700/80 rounded-lg px-1 py-1.5">
+              <div class="text-[9.5px] text-slate-400 font-bold leading-tight mb-0.5">실패 시</div>
+              <div id="ui-stat-risk" class="text-[12px] font-black text-emerald-400 leading-tight">유지</div>
+            </div>
+          </div>
+
+          <div class="scroll-bar">
+            <div class="flex items-center gap-2 font-bold text-indigo-200">
+              <span>📜 주문서: <span id="ui-scroll-count" class="text-amber-300 font-black">0</span>장</span>
+              <span id="ui-scroll-bonus" class="bg-emerald-950 border border-emerald-500 text-emerald-300 px-1.5 py-0.5 rounded text-[10px]">+0% 적용</span>
+            </div>
+            <button id="btn-use-scroll" class="bg-gradient-to-r from-indigo-600 to-violet-600 border border-indigo-300 text-white text-[10.5px] font-black px-2.5 py-1 rounded-md active:scale-95 disabled:opacity-40">
+              주문서 사용 (+15%)
+            </button>
+          </div>
+
+          <div class="flex items-stretch gap-1.5 h-[40px]">
+            <button id="btn-manual-enh" class="flex-1 rounded-lg border border-orange-300 bg-gradient-to-b from-orange-500 to-orange-700 text-white font-black text-[12px] flex items-center justify-center gap-1.5 shadow-sm active:translate-y-0.5 disabled:opacity-45">
+              <span>🔨 수동 강화</span>
+              <span id="ui-enh-cost" class="text-yellow-200">50 G</span>
+            </button>
+
+            <div class="flex-[1.1] flex items-center gap-1 bg-slate-900/95 border border-slate-600 rounded-lg p-1">
+              <select id="sel-target-lv" class="w-[60px] h-full bg-slate-800 border border-slate-600 rounded-md text-yellow-300 text-[11px] font-black text-center outline-none">
+                <option value="5">+5강</option>
+                <option value="10" selected>+10강</option>
+                <option value="15">+15강</option>
+                <option value="20">+20강</option>
+                <option value="25">+25강</option>
+                <option value="30">+30강</option>
+                <option value="999">무제한</option>
+              </select>
+              <button id="btn-auto-enh" class="flex-1 h-full rounded-md border border-cyan-300 bg-gradient-to-b from-sky-600 to-sky-800 text-white text-[11.5px] font-black flex items-center justify-center">
+                ⚡ 자동강화
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 하단 사냥터 패널 -->
+    <section id="hunting-panel">
+      <div id="band-a-hud">
+        <div class="flex justify-between items-center gap-1">
+          <div class="flex items-center gap-1 min-w-0">
+            <button id="btn-prev-stage" class="w-5 h-5 rounded bg-slate-800 border border-slate-600 text-[10px] font-black disabled:opacity-35 flex-shrink-0">◀</button>
+            <div class="text-[11px] font-black text-sky-400 truncate">
+              <span id="ui-stage-name">Stage 1 비취 숲</span>
+              <span id="ui-wave-badge" class="ml-1 text-[10px] text-slate-300 font-extrabold">1/10</span>
+            </div>
+            <button id="btn-next-stage" class="w-5 h-5 rounded bg-slate-800 border border-slate-600 text-[10px] font-black disabled:opacity-35 flex-shrink-0">▶</button>
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <div class="flex items-center gap-1 bg-amber-950/90 border border-amber-500 rounded-lg px-2 py-0.5 text-[11px] font-black text-yellow-300">
+              <span>🪙</span>
+              <span id="ui-gold">120</span>
+            </div>
+            <label class="flex items-center gap-1 bg-slate-800 border border-slate-600 rounded px-1.5 py-0.5 text-[9.5px] font-extrabold text-slate-200 cursor-pointer">
+              <input type="checkbox" id="chk-auto-next" checked class="w-3 h-3 accent-sky-400" />
+              <span>자동돌파</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-0.5">
+          <div class="flex justify-between items-center text-[11px] font-black gap-1">
+            <div id="ui-enemy-name" class="text-slate-100 truncate">Lv.1 독버섯 슬라임</div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span id="ui-hunt-status" class="text-[9.5px] font-extrabold text-emerald-400">● 자동사냥 ON</span>
+              <button id="btn-boss-retry" class="hidden bg-gradient-to-r from-amber-500 to-red-600 border border-yellow-200 text-white text-[9.5px] px-2 py-0.1 rounded-full font-black animate-pulse">
+                🔥 보스 재도전
+              </button>
+              <div id="ui-boss-timer" class="hidden bg-red-900 border border-red-400 text-yellow-300 text-[9.5px] px-2 py-0.1 rounded-full font-black">
+                ☠️ 20.0s
+              </div>
+            </div>
+          </div>
+          <div id="hp-track" class="hp-track">
+            <div id="monster-hp-fill"></div>
+            <div id="ui-hp-text" class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow">
+              50 / 50
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="band-b-arena" class="theme-forest" title="화면을 터치하면 즉시 독침을 발사합니다!">
+        <div class="arena-sky-decor"></div>
+        <div class="arena-horizon-line"></div>
+
+        <div id="player-fighter">
+          <div id="player-fighter-svg"></div>
+          <div class="ground-shadow"></div>
+        </div>
+
+        <div id="enemy-fighter">
+          <div id="enemy-fighter-svg"></div>
+          <div class="ground-shadow"></div>
+        </div>
+
+        <div id="vfx-layer"></div>
+      </div>
+
+      <div id="band-c-dock">
+        <div id="skill-strip" class="skill-strip"></div>
+
+        <div class="ctrl-strip">
+          <button id="btn-auto-start" class="mini-ctrl-btn bg-gradient-to-b from-emerald-600 to-emerald-800 border-emerald-400">
+            ▶️ 자동사냥 시작
+          </button>
+          <button id="btn-auto-stop" class="mini-ctrl-btn bg-gradient-to-b from-rose-600 to-rose-800 border-rose-400">
+            ⏸️ 자동사냥 종료
+          </button>
+          <button id="btn-save" class="mini-ctrl-btn bg-gradient-to-b from-blue-600 to-blue-800 border-blue-400">
+            💾 저장
+          </button>
+          <button id="btn-reset" class="mini-ctrl-btn bg-gradient-to-b from-slate-600 to-slate-800 border-slate-400">
+            🔄 초기화
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div id="top-toast">알림 메시지</div>
+
+    <div id="reset-modal">
+      <div class="w-full max-w-[320px] bg-slate-800 border-2 border-rose-500 rounded-2xl p-5 text-center shadow-2xl">
+        <div class="text-base font-black text-rose-400 mb-2">⚠️ 게임 데이터 초기화</div>
+        <div class="text-xs text-slate-200 leading-relaxed mb-4">
+          사마귀 전사의 강화 등급, 보유 골드, 강화주문서 수량, 스테이지 진행도가 모두 초기화됩니다. 정말 처음부터 다시 시작할까요?
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-modal-cancel" class="flex-1 h-10 rounded-xl bg-slate-600 text-white text-xs font-black">취소</button>
+          <button id="btn-modal-confirm" class="flex-1 h-10 rounded-xl bg-rose-600 text-white text-xs font-black">초기화 실행</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SafeStorage = {
+      mem: {},
+      get(key) {
+        try { return window.localStorage.getItem(key); }
+        catch (e) { return Object.prototype.hasOwnProperty.call(this.mem, key) ? this.mem[key] : null; }
+      },
+      set(key, val) {
+        this.mem[key] = val;
+        try { window.localStorage.setItem(key, val); } catch (e) {}
+      },
+      remove(key) {
+        delete this.mem[key];
+        try { window.localStorage.removeItem(key); } catch (e) {}
+      }
+    };
+
+    const SFX = {
+      ctx: null,
+      enabled: true,
+      init() {
+        try {
+          if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) this.ctx = new AC();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        } catch (e) {}
+      },
+      tone(freq, type, dur, vol = 0.08, slide = null) {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          if (slide) osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + dur);
+        } catch (e) {}
+      },
+      shoot() { this.tone(720, 'sine', 0.07, 0.06, 1320); },
+      hit(crit) { this.tone(crit ? 520 : 280, 'triangle', 0.08, crit ? 0.11 : 0.07, 90); },
+      skill() {
+        this.tone(420, 'sawtooth', 0.15, 0.09, 1050);
+        setTimeout(() => this.tone(760, 'sine', 0.18, 0.09, 1380), 50);
+      },
+      success() {
+        this.tone(523.25, 'triangle', 0.1, 0.11);
+        setTimeout(() => this.tone(659.25, 'triangle', 0.1, 0.11), 65);
+        setTimeout(() => this.tone(1046.5, 'sine', 0.2, 0.13), 130);
+      },
+      fail() { this.tone(180, 'sawtooth', 0.18, 0.11, 80); },
+      coin() {
+        this.tone(987.77, 'sine', 0.06, 0.07);
+        setTimeout(() => this.tone(1318.5, 'sine', 0.1, 0.07), 50);
+      },
+      boss() { this.tone(130, 'sawtooth', 0.3, 0.13, 62); },
+      scroll() {
+        this.tone(880, 'sine', 0.08, 0.09);
+        setTimeout(() => this.tone(1760, 'sine', 0.15, 0.11), 70);
+      }
+    };
+
+    const SAVE_KEY = 'mantis_venom_rpg_v8';
+    const WAVES_PER_STAGE = 10;
+    const BOSS_LIMIT_SEC = 20.0;
+    const SPAWN_X_PCT = 86;
+    const MELEE_STOP_X_PCT = 40;
+
+    const WEAPON_TIERS = [
+      { minLv: 0,  name: '녹색 사마귀 전사',     grade: '초급 키틴질', color: '#84cc16', main: '#15803d', dark: '#14532d', spot: '#78350f', glow: '#bef264', wing: 'rgba(220,252,231,0.65)' },
+      { minLv: 5,  name: '비취 외골격 전사',     grade: '고급 키틴질', color: '#22c55e', main: '#16a34a', dark: '#14532d', spot: '#78350f', glow: '#4ade80', wing: 'rgba(187,247,208,0.7)' },
+      { minLv: 10, name: '맹독 가시 사마귀',     grade: '희귀 외골격', color: '#38bdf8', main: '#0d9488', dark: '#134e4a', spot: '#4c1d95', glow: '#2dd4bf', wing: 'rgba(153,246,228,0.75)' },
+      { minLv: 15, name: '진홍 산성 사마귀',     grade: '영웅 외골격', color: '#c084fc', main: '#4d7c0f', dark: '#365314', spot: '#991b1b', glow: '#f43f5e', wing: 'rgba(254,205,211,0.78)' },
+      { minLv: 20, name: '뇌전 제왕 사마귀',     grade: '전설 외골격', color: '#fbbf24', main: '#15803d', dark: '#052e16', spot: '#b45309', glow: '#facc15', wing: 'rgba(254,240,138,0.82)' },
+      { minLv: 25, name: '신성 초월 멸살 전사',   grade: '신화 외골격', color: '#fb7185', main: '#047857', dark: '#022c22', spot: '#be123c', glow: '#38bdf8', wing: 'rgba(186,230,253,0.88)' }
+    ];
+
+    const SKILLS = [
+      { reqLv: 5,  id: 'smash',     name: '강타독침',   icon: '💥', dartColor: '#a3e635', chance: 0.30, mult: 2.2, desc: '거대 관통 독침 사격 (220% 피해)' },
+      { reqLv: 10, id: 'flame',     name: '맹독연사',   icon: '🧪', dartColor: '#22c55e', chance: 0.25, mult: 3.2, desc: '고농축 맹독침 3연발 사격 (320% 피해)' },
+      { reqLv: 15, id: 'acid',      name: '산성폭발',   icon: '☣️', dartColor: '#c084fc', chance: 0.22, mult: 4.5, desc: '착탄 시 산성 폭발 독침 (450% 피해)' },
+      { reqLv: 20, id: 'lightning', name: '뇌전독침',   icon: '⚡', dartColor: '#38bdf8', chance: 0.20, mult: 6.2, desc: '번개를 부르는 전격 독침 (620% 피해)' },
+      { reqLv: 25, id: 'berserk',   name: '광폭사마귀', icon: '💢', dartColor: '#f43f5e', chance: 0.18, mult: 8.5, desc: '포식자 각성 진홍 독침 연사 (850% 피해)' },
+      { reqLv: 30, id: 'celestial', name: '천상멸살침', icon: '🌟', dartColor: '#fde047', chance: 0.15, mult: 12.0,desc: '하늘에서 내리꽂히는 거대 멸살 독침 (1200%)' }
+    ];
+
+    const STAGE_THEMES = [
+      {
+        name: '비취 숲', css: 'theme-forest',
+        mobs: [
+          { name: '독버섯 슬라임', type: 'mushroom_slime', color: '#4ade80', eye: '#fef08a' },
+          { name: '비취 뿔늑대', type: 'horn_wolf', color: '#65a30d', eye: '#ef4444' }
+        ],
+        boss: { name: '포식자 사마귀 킹', type: 'boss_mantis', color: '#15803d', eye: '#facc15' }
+      },
+      {
+        name: '독안개 늪지', css: 'theme-swamp',
+        mobs: [
+          { name: '보라 독개구리', type: 'swamp_frog', color: '#c084fc', eye: '#38bdf8' },
+          { name: '늪지 거대 거미', type: 'swamp_spider', color: '#7e22ce', eye: '#f87171' }
+        ],
+        boss: { name: '맹독 브루드 마더', type: 'boss_spider', color: '#581c87', eye: '#facc15' }
+      },
+      {
+        name: '용암 협곡', css: 'theme-volcano',
+        mobs: [
+          { name: '마그마 골렘', type: 'magma_golem', color: '#ea580c', eye: '#fde047' },
+          { name: '화염 도마뱀', type: 'lava_lizard', color: '#dc2626', eye: '#fbbf24' }
+        ],
+        boss: { name: '용암 군주 벨리알', type: 'boss_dragon', color: '#991b1b', eye: '#fde047' }
+      },
+      {
+        name: '심연의 마왕성', css: 'theme-abyss',
+        mobs: [
+          { name: '심연의 유령', type: 'abyss_ghost', color: '#38bdf8', eye: '#ffffff' },
+          { name: '암흑 기사', type: 'dark_knight', color: '#475569', eye: '#38bdf8' }
+        ],
+        boss: { name: '심연의 마왕 루시퍼', type: 'boss_devil', color: '#1e1b4b', eye: '#f43f5e' }
+      }
+    ];
+
+    let game = {
+      gold: 120,
+      level: 0,
+      scrolls: 2,
+      scrollBonusRate: 0,
+      stageWorld: 1,
+      stageWave: 1,
+      isBoss: false,
+      enemyMaxHp: 50,
+      enemyCurrHp: 50,
+      enemyX: SPAWN_X_PCT,
+      isAutoHunt: false,
+      isAutoEnhance: false,
+      targetEnhLevel: 10,
+      bossTimer: BOSS_LIMIT_SEC
+    };
+
+    let lastFrameTime = performance.now();
+
+    const D = {
+      enhBadge: document.getElementById('ui-enh-badge'),
+      weaponName: document.getElementById('ui-weapon-name'),
+      tierGrade: document.getElementById('ui-tier-grade'),
+      btnSound: document.getElementById('btn-sound'),
+      emblemBox: document.getElementById('emblem-box'),
+      forgeHammer: document.getElementById('forge-hammer'),
+      forgeMantisSvg: document.getElementById('forge-mantis-svg'),
+      statAtk: document.getElementById('ui-stat-atk'),
+      statCrit: document.getElementById('ui-stat-crit'),
+      statRate: document.getElementById('ui-stat-rate'),
+      statRisk: document.getElementById('ui-stat-risk'),
+      uiScrollCount: document.getElementById('ui-scroll-count'),
+      uiScrollBonus: document.getElementById('ui-scroll-bonus'),
+      btnUseScroll: document.getElementById('btn-use-scroll'),
+      btnManualEnh: document.getElementById('btn-manual-enh'),
+      enhCost: document.getElementById('ui-enh-cost'),
+      selTargetLv: document.getElementById('sel-target-lv'),
+      btnAutoEnh: document.getElementById('btn-auto-enh'),
+      btnPrevStage: document.getElementById('btn-prev-stage'),
+      btnNextStage: document.getElementById('btn-next-stage'),
+      stageName: document.getElementById('ui-stage-name'),
+      waveBadge: document.getElementById('ui-wave-badge'),
+      gold: document.getElementById('ui-gold'),
+      chkAutoNext: document.getElementById('chk-auto-next'),
+      enemyName: document.getElementById('ui-enemy-name'),
+      huntStatus: document.getElementById('ui-hunt-status'),
+      btnBossRetry: document.getElementById('btn-boss-retry'),
+      bossTimer: document.getElementById('ui-boss-timer'),
+      hpTrack: document.getElementById('hp-track'),
+      monsterHpFill: document.getElementById('monster-hp-fill'),
+      hpText: document.getElementById('ui-hp-text'),
+      arena: document.getElementById('band-b-arena'),
+      playerFighter: document.getElementById('player-fighter'),
+      playerFighterSvg: document.getElementById('player-fighter-svg'),
+      enemyFighter: document.getElementById('enemy-fighter'),
+      enemyFighterSvg: document.getElementById('enemy-fighter-svg'),
+      vfxLayer: document.getElementById('vfx-layer'),
+      skillStrip: document.getElementById('skill-strip'),
+      btnAutoStart: document.getElementById('btn-auto-start'),
+      btnAutoStop: document.getElementById('btn-auto-stop'),
+      btnSave: document.getElementById('btn-save'),
+      btnReset: document.getElementById('btn-reset'),
+      topToast: document.getElementById('top-toast'),
+      resetModal: document.getElementById('reset-modal'),
+      btnModalCancel: document.getElementById('btn-modal-cancel'),
+      btnModalConfirm: document.getElementById('btn-modal-confirm')
+    };
+
+    let toastTimer = null;
+    function showToast(msg) {
+      D.topToast.textContent = msg;
+      D.topToast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { D.topToast.classList.remove('show'); }, 1600);
+    }
+
+    function getMantisSvgString(lv, isAttackPose = false) {
+      const tier = WEAPON_TIERS.slice().reverse().find(t => lv >= t.minLv) || WEAPON_TIERS[0];
+      const wingRot = isAttackPose ? 'transform="rotate(-15 50 42)"' : '';
+      const armRot = isAttackPose ? 'transform="rotate(28 36 44)"' : '';
+      return `
+        <svg viewBox="0 0 100 100" class="w-full h-full">
+          <ellipse cx="50" cy="88" rx="20" ry="6" fill="rgba(0,0,0,0.55)"/>
+          <g ${wingRot} style="transform-origin: 50px 42px; transition: transform 0.14s;">
+            <path d="M46 38 Q 24 20 30 52 Z" fill="${tier.wing}" stroke="${tier.glow}" stroke-width="0.9"/>
+            <path d="M54 38 Q 76 20 70 52 Z" fill="${tier.wing}" stroke="${tier.glow}" stroke-width="0.9"/>
+            <path d="M44 45 Q 20 30 24 62 Z" fill="${tier.wing}" stroke="${tier.glow}" stroke-width="0.7"/>
+            <path d="M56 45 Q 80 30 76 62 Z" fill="${tier.wing}" stroke="${tier.glow}" stroke-width="0.7"/>
+          </g>
+          <path d="M38 36 L62 36 L67 62 L33 62 Z" fill="${tier.main}" stroke="${tier.glow}" stroke-width="1.2"/>
+          <path d="M41 40 Q 48 38 51 46 Q 42 50 41 40 Z" fill="${tier.spot}" opacity="0.85"/>
+          <path d="M54 44 Q 61 42 63 52 Q 54 56 54 44 Z" fill="${tier.spot}" opacity="0.85"/>
+          <path d="M35 62 L65 62 L60 80 L40 80 Z" fill="${tier.dark}" stroke="${tier.main}" stroke-width="1"/>
+          <circle cx="50" cy="24" r="13" fill="${tier.main}" stroke="${tier.glow}" stroke-width="1.2"/>
+          <ellipse cx="43" cy="22" rx="4.5" ry="3.5" fill="#facc15"/>
+          <ellipse cx="57" cy="22" rx="4.5" ry="3.5" fill="#facc15"/>
+          <line x1="47" y1="13" x2="38" y2="4" stroke="${tier.main}" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="53" y1="13" x2="62" y2="4" stroke="${tier.main}" stroke-width="1.8" stroke-linecap="round"/>
+          <g id="mantis-arm-group" ${armRot} style="transform-origin: 36px 44px; transition: transform 0.14s;">
+            <path d="M36 44 Q 14 36 18 52 L36 56" fill="none" stroke="${tier.color}" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M22 42 L18 52 L28 48" fill="${tier.glow}"/>
+            <line x1="26" y1="42" x2="23" y2="38" stroke="${tier.glow}" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="20" y1="46" x2="16" y2="44" stroke="${tier.glow}" stroke-width="1.5" stroke-linecap="round"/>
+          </g>
+        </svg>
+      `;
+    }
+
+    function getMonsterSvgString(mobType, color, eyeColor) {
+      if (mobType === 'mushroom_slime') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="22" ry="7" fill="rgba(0,0,0,0.5)"/><path d="M25 55 Q 50 15 75 55 Z" fill="${color}" stroke="#bef264" stroke-width="1.5"/><circle cx="42" cy="40" r="4" fill="#fff"/><circle cx="58" cy="40" r="4" fill="#fff"/><ellipse cx="50" cy="55" rx="18" ry="12" fill="#3f3f46"/><circle cx="43" cy="53" r="3" fill="${eyeColor}"/><circle cx="57" cy="53" r="3" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'horn_wolf') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="84" rx="24" ry="7" fill="rgba(0,0,0,0.5)"/><path d="M30 45 L 38 25 L 50 45 L 62 25 L 70 45 Z" fill="${color}"/><ellipse cx="50" cy="62" rx="22" ry="16" fill="${color}"/><polygon points="35,28 26,12 40,22" fill="#3f3f46"/><polygon points="65,28 74,12 60,22" fill="#3f3f46"/><circle cx="41" cy="58" r="3.5" fill="${eyeColor}"/><circle cx="59" cy="58" r="3.5" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'swamp_frog') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="84" rx="26" ry="8" fill="rgba(0,0,0,0.5)"/><ellipse cx="50" cy="60" rx="25" ry="18" fill="${color}"/><circle cx="38" cy="44" r="8" fill="${color}"/><circle cx="62" cy="44" r="8" fill="${color}"/><circle cx="38" cy="44" r="3.5" fill="${eyeColor}"/><circle cx="62" cy="44" r="3.5" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'swamp_spider') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="84" rx="26" ry="8" fill="rgba(0,0,0,0.5)"/><path d="M20 30 Q 50 10 80 30 Q 90 60 80 80 Q 50 90 20 80 Q 10 60 20 30 Z" fill="${color}"/><circle cx="42" cy="45" r="4" fill="${eyeColor}"/><circle cx="58" cy="45" r="4" fill="${eyeColor}"/><circle cx="36" cy="38" r="2.5" fill="${eyeColor}"/><circle cx="64" cy="38" r="2.5" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'magma_golem') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="28" ry="8" fill="rgba(0,0,0,0.5)"/><rect x="26" y="32" width="48" height="50" rx="8" fill="${color}" stroke="#f97316" stroke-width="2"/><polygon points="32,32 50,14 68,32" fill="#ea580c"/><rect x="38" y="48" width="8" height="8" rx="2" fill="${eyeColor}"/><rect x="54" y="48" width="8" height="8" rx="2" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'lava_lizard') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="27" ry="8" fill="rgba(0,0,0,0.5)"/><path d="M22 65 Q 50 35 78 65 Z" fill="${color}"/><ellipse cx="65" cy="48" rx="14" ry="12" fill="${color}"/><circle cx="70" cy="45" r="3.5" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'abyss_ghost') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="86" rx="22" ry="7" fill="rgba(0,0,0,0.5)"/><path d="M30 35 Q 50 15 70 35 Q 75 65 70 85 Q 60 70 50 85 Q 40 70 30 85 Q 25 65 30 35 Z" fill="${color}" opacity="0.88"/><circle cx="42" cy="42" r="4.5" fill="${eyeColor}"/><circle cx="58" cy="42" r="4.5" fill="${eyeColor}"/></svg>`;
+      } else if (mobType === 'dark_knight') {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="85" rx="25" ry="8" fill="rgba(0,0,0,0.5)"/><path d="M32 30 L 68 30 L 72 80 L 28 80 Z" fill="${color}" stroke="#64748b" stroke-width="2"/><path d="M38 18 L 50 8 L 62 18 Z" fill="#334155"/><line x1="42" y1="42" x2="58" y2="42" stroke="${eyeColor}" stroke-width="3"/></svg>`;
+      } else if (mobType.startsWith('boss_')) {
+        return `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="86" rx="34" ry="9" fill="rgba(0,0,0,0.65)"/><circle cx="50" cy="50" r="32" fill="${color}" stroke="#f87171" stroke-width="2.5"/><path d="M28 32 Q 50 6 72 32 Z" fill="#7f1d1d"/><circle cx="38" cy="42" r="6" fill="${eyeColor}"/><circle cx="62" cy="42" r="6" fill="${eyeColor}"/><path d="M35 68 Q 50 56 65 68" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"/></svg>`;
+      }
+      return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="${color}"/></svg>`;
+    }
+
+    function getCurrentStageInfo() {
+      const themeIdx = (game.stageWorld - 1) % STAGE_THEMES.length;
+      return STAGE_THEMES[themeIdx];
+    }
+
+    function getCurrentEnemyTemplate() {
+      const theme = getCurrentStageInfo();
+      if (game.isBoss) {
+        return { name: `[보스] ${theme.boss.name}`, type: theme.boss.type, color: theme.boss.color, eye: theme.boss.eye, isBoss: true };
+      } else {
+        const mobIdx = (game.stageWave - 1) % theme.mobs.length;
+        const m = theme.mobs[mobIdx];
+        return { name: `Lv.${(game.stageWorld - 1) * 10 + game.stageWave} ${m.name}`, type: m.type, color: m.color, eye: m.eye, isBoss: false };
+      }
+    }
+
+    function getEnhanceCost(lv) { return Math.floor(50 * Math.pow(1.32, lv)); }
+    function getPlayerAtk(lv) { return Math.floor(18 * Math.pow(1.22, lv)); }
+
+    function getBaseEnhanceRate(lv) {
+      return Math.max(40, 100 - lv * 2.2);
+    }
+
+    function getScrollStep(lv) {
+      if (lv < 10) return 15;
+      if (lv < 20) return 10;
+      return 5;
+    }
+
+    function getTotalEnhanceRate(lv) {
+      const base = getBaseEnhanceRate(lv);
+      return Math.min(90, Math.round(base + game.scrollBonusRate));
+    }
+
+    function updateUI() {
+      const lv = game.level;
+      const tier = WEAPON_TIERS.slice().reverse().find(t => lv >= t.minLv) || WEAPON_TIERS[0];
+      const cost = getEnhanceCost(lv);
+      const atk = getPlayerAtk(lv);
+      const totalRate = getTotalEnhanceRate(lv);
+
+      D.enhBadge.textContent = `+${lv}`;
+      D.weaponName.textContent = tier.name;
+      D.tierGrade.textContent = `· ${tier.grade}`;
+      D.forgeMantisSvg.innerHTML = getMantisSvgString(lv);
+
+      D.statAtk.textContent = atk;
+      D.statCrit.textContent = `${Math.min(10 + Math.floor(lv * 0.8), 50)}%/150%`;
+      D.statRate.textContent = `${totalRate}%`;
+      if (game.scrollBonusRate > 0) {
+        D.statRate.className = 'text-[13px] font-black text-emerald-300 leading-tight';
+      } else {
+        D.statRate.className = 'text-[13px] font-black text-sky-400 leading-tight';
+      }
+
+      let riskText = '유지';
+      let riskColor = 'text-emerald-400';
+      if (lv >= 20) {
+        riskText = '초기화 위험';
+        riskColor = 'text-rose-500 font-black animate-pulse';
+      } else if (lv >= 10) {
+        riskText = '-1강 하락';
+        riskColor = 'text-amber-400';
+      }
+      D.statRisk.className = `text-[12px] font-black ${riskColor} leading-tight`;
+      D.statRisk.textContent = riskText;
+
+      D.uiScrollCount.textContent = game.scrolls;
+      D.uiScrollBonus.textContent = `+${Math.round(game.scrollBonusRate)}% 적용`;
+      const step = getScrollStep(lv);
+      D.btnUseScroll.textContent = `주문서 사용 (+${step}%)`;
+      if (totalRate >= 90) {
+        D.btnUseScroll.textContent = `최대 확률(90%)`;
+        D.btnUseScroll.disabled = true;
+      } else {
+        D.btnUseScroll.disabled = game.scrolls <= 0;
+      }
+
+      D.enhCost.textContent = `${cost.toLocaleString()} G`;
+      D.btnManualEnh.disabled = game.gold < cost;
+
+      const theme = getCurrentStageInfo();
+      D.stageName.textContent = `Stage ${game.stageWorld} ${theme.name}`;
+      D.waveBadge.textContent = game.isBoss ? 'BOSS' : `${game.stageWave}/${WAVES_PER_STAGE}`;
+      D.gold.textContent = game.gold.toLocaleString();
+
+      const enemyInfo = getCurrentEnemyTemplate();
+      D.enemyName.textContent = enemyInfo.name;
+
+      const hpPct = Math.max(0, Math.min(100, (game.enemyCurrHp / game.enemyMaxHp) * 100));
+      D.monsterHpFill.style.width = `${hpPct}%`;
+      D.hpText.textContent = `${Math.ceil(game.enemyCurrHp)} / ${Math.ceil(game.enemyMaxHp)}`;
+
+      if (game.isBoss) {
+        D.hpTrack.classList.add('is-boss');
+        D.btnBossRetry.classList.remove('hidden');
+        D.bossTimer.classList.remove('hidden');
+        D.bossTimer.textContent = `☠️ ${game.bossTimer.toFixed(1)}s`;
+      } else {
+        D.hpTrack.classList.remove('is-boss');
+        D.btnBossRetry.classList.add('hidden');
+        D.bossTimer.classList.add('hidden');
+      }
+
+      D.huntStatus.textContent = game.isAutoHunt ? '● 자동사냥 ON' : '⏸ 자동사냥 정지';
+      D.huntStatus.className = `text-[9.5px] font-extrabold ${game.isAutoHunt ? 'text-emerald-400' : 'text-slate-400'}`;
+
+      renderSkillStrip();
+    }
+
+    function renderSkillStrip() {
+      D.skillStrip.innerHTML = '';
+      SKILLS.forEach(s => {
+        const isUnlocked = game.level >= s.reqLv;
+        const pill = document.createElement('div');
+        pill.className = `skill-pill ${isUnlocked ? 'unlocked' : 'locked'}`;
+        pill.innerHTML = `<span>${s.icon}</span><span class="truncate">+${s.reqLv}</span>`;
+        pill.title = `${s.name} (요구 +${s.reqLv}): ${s.desc}`;
+        pill.addEventListener('click', () => { showToast(`${s.name}: ${s.desc}`); });
+        D.skillStrip.appendChild(pill);
+      });
+    }
+
+    function renderPlayerFighter(isAttack = false) {
+      D.playerFighterSvg.innerHTML = getMantisSvgString(game.level, isAttack);
+    }
+
+    function renderEnemyFighter() {
+      const enemy = getCurrentEnemyTemplate();
+      D.enemyFighterSvg.innerHTML = getMonsterSvgString(enemy.type, enemy.color, enemy.eye);
+      if (game.isBoss) {
+        D.enemyFighter.classList.add('is-boss');
+      } else {
+        D.enemyFighter.classList.remove('is-boss');
+      }
+      D.enemyFighter.style.left = `${game.enemyX}%`;
+      if (game.enemyX > MELEE_STOP_X_PCT) {
+        D.enemyFighter.classList.add('is-walking');
+      } else {
+        D.enemyFighter.classList.remove('is-walking');
+      }
+    }
+
+    function updateArenaTheme() {
+      const theme = getCurrentStageInfo();
+      D.arena.className = theme.css;
+    }
+
+    function spawnEnemy() {
+      const baseHp = game.isBoss ? 280 * Math.pow(1.45, game.stageWorld - 1) : 45 * Math.pow(1.25, game.stageWorld - 1) * Math.pow(1.12, game.stageWave - 1);
+      game.enemyMaxHp = Math.floor(baseHp);
+      game.enemyCurrHp = game.enemyMaxHp;
+      game.enemyX = SPAWN_X_PCT;
+      game.bossTimer = BOSS_LIMIT_SEC;
+      updateArenaTheme();
+      renderEnemyFighter();
+      updateUI();
+    }
+
+    function useEnhanceScroll() {
+      if (game.scrolls <= 0) {
+        showToast('📜 보유한 강화주문서가 없습니다!');
+        return;
+      }
+      const currentTotal = getTotalEnhanceRate(game.level);
+      if (currentTotal >= 90) {
+        showToast('⚠️ 강화 확률은 최대 90%까지만 올릴 수 있습니다!');
+        return;
+      }
+
+      const step = getScrollStep(game.level);
+      game.scrolls--;
+      game.scrollBonusRate = Math.min(90 - getBaseEnhanceRate(game.level), game.scrollBonusRate + step);
+
+      SFX.scroll();
+      showToast(`📜 강화주문서 사용! 성공 확률이 상승했습니다.`);
+      updateUI();
+    }
+
+    // 강화 성공 시 폭죽 효과 생성 함수
+    function spawnFireworks() {
+      const boxRect = D.emblemBox.getBoundingClientRect();
+      const centerX = boxRect.width / 2;
+      const centerY = boxRect.height / 2;
+      const colors = ['#fde047', '#f43f5e', '#38bdf8', '#4ade80', '#c084fc'];
+
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'firework-particle';
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.left = `${centerX}px`;
+        p.style.top = `${centerY}px`;
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 35 + Math.random() * 50;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        p.style.setProperty('--dx', `${dx}px`);
+        p.style.setProperty('--dy', `${dy}px`);
+
+        D.emblemBox.appendChild(p);
+        setTimeout(() => p.remove(), 600);
+      }
+    }
+
+    // 강화 실패 시 검은 연기 효과 생성 함수
+    function spawnSmoke() {
+      for (let i = 0; i < 4; i++) {
+        const s = document.createElement('div');
+        s.className = 'smoke-particle';
+        const sx = (Math.random() - 0.5) * 40;
+        s.style.setProperty('--sx', `${sx}px`);
+        s.style.animationDelay = `${i * 0.08}s`;
+        D.emblemBox.appendChild(s);
+        setTimeout(() => s.remove(), 600);
+      }
+    }
+
+    function executeManualEnhance() {
+      const cost = getEnhanceCost(game.level);
+      if (game.gold < cost) {
+        showToast('골드가 부족합니다!');
+        SFX.fail();
+        return;
+      }
+      game.gold -= cost;
+
+      D.forgeHammer.classList.remove('hammer-hit');
+      void D.forgeHammer.offsetWidth;
+      D.forgeHammer.classList.add('hammer-hit');
+      SFX.tone(320, 'triangle', 0.12, 0.08, 140);
+
+      const rate = getTotalEnhanceRate(game.level);
+      const isSuccess = Math.random() * 100 < rate;
+
+      game.scrollBonusRate = 0;
+
+      if (isSuccess) {
+        game.level++;
+        SFX.success();
+        showToast(`🎉 강화 성공! (+${game.level})`);
+        D.emblemBox.classList.remove('flash-up');
+        void D.emblemBox.offsetWidth;
+        D.emblemBox.classList.add('flash-up');
+        spawnFireworks();
+      } else {
+        SFX.fail();
+        D.emblemBox.classList.remove('shake-box');
+        void D.emblemBox.offsetWidth;
+        D.emblemBox.classList.add('shake-box');
+        spawnSmoke();
+
+        if (game.level >= 20 && Math.random() < 0.28) {
+          game.level = 0;
+          showToast('⚠️ 대참사! 강화가 0으로 초기화되었습니다!');
+        } else if (game.level >= 10) {
+          game.level--;
+          showToast('❌ 강화 실패... 수치가 1 하락했습니다.');
+        } else {
+          showToast('❌ 강화에 실패했습니다.');
+        }
+      }
+      renderPlayerFighter();
+      updateUI();
+    }
+
+    function toggleAutoEnhance() {
+      game.isAutoEnhance = !game.isAutoEnhance;
+      if (game.isAutoEnhance) {
+        D.btnAutoEnh.textContent = '⏹ 중지';
+        D.btnAutoEnh.className = 'flex-1 h-full rounded-md border border-rose-300 bg-gradient-to-b from-rose-600 to-rose-800 text-white text-[11.5px] font-black flex items-center justify-center animate-pulse';
+        showToast('⚡ 자동강화를 시작합니다.');
+      } else {
+        stopAutoEnhance();
+        showToast('자동강화를 중지했습니다.');
+      }
+    }
+
+    function stopAutoEnhance() {
+      game.isAutoEnhance = false;
+      D.btnAutoEnh.textContent = '⚡ 자동강화';
+      D.btnAutoEnh.className = 'flex-1 h-full rounded-md border border-cyan-300 bg-gradient-to-b from-sky-600 to-sky-800 text-white text-[11.5px] font-black flex items-center justify-center';
+    }
+
+    function triggerPlayerAttack() {
+      if (game.enemyCurrHp <= 0) return;
+
+      D.playerFighter.classList.remove('is-attacking');
+      void D.playerFighter.offsetWidth;
+      D.playerFighter.classList.add('is-attacking');
+      setTimeout(() => D.playerFighter.classList.remove('is-attacking'), 280);
+      renderPlayerFighter(true);
+      setTimeout(() => renderPlayerFighter(false), 280);
+
+      SFX.shoot();
+
+      const unlockedSkills = SKILLS.filter(s => game.level >= s.reqLv);
+      let selectedSkill = null;
+      if (unlockedSkills.length > 0) {
+        for (let i = unlockedSkills.length - 1; i >= 0; i--) {
+          const sk = unlockedSkills[i];
+          if (Math.random() < sk.chance) { selectedSkill = sk; break; }
+        }
+      }
+
+      createMuzzleFlash();
+      createVenomDartProjectile(selectedSkill);
+    }
+
+    function getMantisMuzzlePosition() {
+      const arenaRect = D.arena.getBoundingClientRect();
+      const svgRect = D.playerFighterSvg.querySelector('svg')?.getBoundingClientRect();
+      if (!svgRect || !arenaRect.height) return { left: 16, bottom: 45 };
+
+      // SVG viewBox에서 얼굴 오른쪽, 입 앞에 해당하는 위치(x=66, y=27)
+      const muzzleX = svgRect.left + svgRect.width * 0.66;
+      const muzzleY = svgRect.top + svgRect.height * 0.27;
+      return {
+        left: ((muzzleX - arenaRect.left) / arenaRect.width) * 100,
+        bottom: ((arenaRect.bottom - muzzleY) / arenaRect.height) * 100
+      };
+    }
+
+    function createMuzzleFlash() {
+      const flash = document.createElement('div');
+      flash.className = 'muzzle-flash';
+      const muzzle = getMantisMuzzlePosition();
+      flash.style.left = `${muzzle.left}%`;
+      flash.style.setProperty('--shot-bottom', `${muzzle.bottom}%`);
+      D.vfxLayer.appendChild(flash);
+      setTimeout(() => flash.remove(), 180);
+    }
+
+    function createVenomDartProjectile(skill) {
+      const dart = document.createElement('div');
+      dart.className = 'venom-dart';
+      const muzzle = getMantisMuzzlePosition();
+      dart.style.left = `${muzzle.left}%`;
+      dart.style.setProperty('--shot-bottom', `${muzzle.bottom}%`);
+
+      const dartColor = skill ? skill.dartColor : '#a3e635';
+      dart.innerHTML = `
+        <svg viewBox="0 0 50 20" class="w-full h-full">
+          <polygon points="0,7 36,7 48,10 36,13 0,13" fill="${dartColor}" stroke="#fff" stroke-width="1.2"/>
+          <circle cx="42" cy="10" r="3" fill="#ffffff" filter="drop-shadow(0 0 4px ${dartColor})"/>
+        </svg>
+      `;
+      D.vfxLayer.appendChild(dart);
+
+      const targetX = game.enemyX;
+      requestAnimationFrame(() => { dart.style.left = `${targetX}%`; });
+
+      setTimeout(() => {
+        dart.remove();
+        executeDartHit(skill);
+      }, 180);
+    }
+
+    function executeDartHit(skill) {
+      const baseAtk = getPlayerAtk(game.level);
+      const critChance = Math.min(10 + game.level * 0.8, 50);
+      const isCrit = Math.random() * 100 < critChance;
+
+      let mult = skill ? skill.mult : 1.0;
+      let finalDmg = Math.floor(baseAtk * mult * (isCrit ? 1.5 : 1.0) * (0.9 + Math.random() * 0.2));
+
+      game.enemyCurrHp -= finalDmg;
+      SFX.hit(isCrit);
+
+      const enemyEl = D.enemyFighter;
+      enemyEl.classList.remove('enemy-hit-flash');
+      void enemyEl.offsetWidth;
+      enemyEl.classList.add('enemy-hit-flash');
+      setTimeout(() => enemyEl.classList.remove('enemy-hit-flash'), 180);
+
+      createVenomSplash(game.enemyX, skill ? skill.dartColor : '#a3e635');
+      createDamageFloat(game.enemyX, finalDmg, isCrit);
+
+      if (skill) {
+        showSkillBanner(skill.name);
+        if (skill.id === 'lightning') createLightningBeam();
+        if (skill.id === 'celestial') createCelestialNeedle();
+      }
+
+      if (game.enemyCurrHp <= 0) {
+        handleEnemyDeath();
+      }
+      updateUI();
+    }
+
+    function createVenomSplash(xPct, color) {
+      const splash = document.createElement('div');
+      splash.className = 'venom-splash';
+      splash.style.left = `${xPct}%`;
+      splash.innerHTML = `
+        <svg viewBox="0 0 60 60" class="w-full h-full">
+          <circle cx="30" cy="30" r="22" fill="none" stroke="${color}" stroke-width="4" opacity="0.85"/>
+          <circle cx="30" cy="30" r="10" fill="${color}" opacity="0.6"/>
+        </svg>
+      `;
+      D.vfxLayer.appendChild(splash);
+      setTimeout(() => splash.remove(), 280);
+    }
+
+    function createDamageFloat(xPct, dmg, isCrit) {
+      const floatEl = document.createElement('div');
+      floatEl.className = `dmg-float ${isCrit ? 'text-amber-300 text-[16px]' : 'text-lime-300 text-[13.5px]'}`;
+      floatEl.style.left = `${xPct}%`;
+      floatEl.style.bottom = `36%`;
+      floatEl.textContent = isCrit ? `CRIT! -${dmg}` : `-${dmg}`;
+      D.vfxLayer.appendChild(floatEl);
+      setTimeout(() => floatEl.remove(), 780);
+    }
+
+    function showSkillBanner(skillName) {
+      const banner = document.createElement('div');
+      banner.className = 'skill-toast-banner';
+      banner.textContent = `⚡ [${skillName}] 발동!`;
+      D.vfxLayer.appendChild(banner);
+      setTimeout(() => banner.remove(), 800);
+      SFX.skill();
+    }
+
+    function createLightningBeam() {
+      const beam = document.createElement('div');
+      beam.className = 'lightning-beam';
+      beam.style.left = `${game.enemyX}%`;
+      D.vfxLayer.appendChild(beam);
+      setTimeout(() => beam.remove(), 300);
+    }
+
+    function createCelestialNeedle() {
+      const needle = document.createElement('div');
+      needle.className = 'celestial-needle';
+      needle.style.left = `${game.enemyX}%`;
+      needle.textContent = '🗡️';
+      D.vfxLayer.appendChild(needle);
+      setTimeout(() => needle.remove(), 380);
+    }
+
+    function handleEnemyDeath() {
+      const rewardGold = game.isBoss ? 250 * game.stageWorld : Math.floor(18 * Math.pow(1.3, game.stageWorld - 1) * Math.pow(1.15, game.stageWave - 1));
+      game.gold += rewardGold;
+      SFX.coin();
+
+      if (game.isBoss) {
+        const dropScroll = Math.random() < 0.45;
+        if (dropScroll) {
+          game.scrolls++;
+          SFX.scroll();
+          showToast(`🏆 보스 처치! 🪙+${rewardGold}G & 📜강화주문서 획득!`);
+        } else {
+          showToast(`🏆 보스 처치! 🪙+${rewardGold}G 획득!`);
+        }
+
+        game.isBoss = false;
+        game.stageWorld++;
+        game.stageWave = 1;
+        showToast(`✨ 스테이지 ${game.stageWorld} 진입!`);
+      } else {
+        showToast(`🪙 골드 +${rewardGold.toLocaleString()} 획득!`);
+        game.stageWave++;
+        if (game.stageWave > WAVES_PER_STAGE) {
+          if (D.chkAutoNext.checked) {
+            game.isBoss = true;
+            showToast(`🔥 제${WAVES_PER_STAGE}웨이브 돌파! 거대 보스 출현!`);
+            SFX.boss();
+          } else {
+            game.stageWave = WAVES_PER_STAGE;
+            showToast('웨이브 완료!');
+          }
+        }
+      }
+      spawnEnemy();
+    }
+
+    function gameLoop(timestamp) {
+      const dt = (timestamp - lastFrameTime) / 1000;
+      lastFrameTime = timestamp;
+
+      if (game.enemyX > MELEE_STOP_X_PCT) {
+        game.enemyX -= 14 * dt;
+        if (game.enemyX < MELEE_STOP_X_PCT) game.enemyX = MELEE_STOP_X_PCT;
+        
+        if (Math.random() < 0.25) {
+          const dust = document.createElement('div');
+          dust.className = 'step-dust';
+          dust.style.left = `${game.enemyX}%`;
+          D.vfxLayer.appendChild(dust);
+          setTimeout(() => dust.remove(), 450);
+        }
+        renderEnemyFighter();
+      }
+
+      if (game.isBoss && game.enemyCurrHp > 0) {
+        game.bossTimer -= dt;
+        if (game.bossTimer <= 0) {
+          showToast('⏰ 제한 시간 초과! 보스에게 패배했습니다.');
+          SFX.fail();
+          game.enemyCurrHp = game.enemyMaxHp;
+          game.bossTimer = BOSS_LIMIT_SEC;
+        }
+        D.bossTimer.textContent = `☠️ ${game.bossTimer.toFixed(1)}s`;
+      }
+
+      if (game.isAutoEnhance) {
+        const cost = getEnhanceCost(game.level);
+        const target = parseInt(D.selTargetLv.value, 10);
+        if (game.level >= target) {
+          stopAutoEnhance();
+          showToast(`🎯 목표 강화(+${target}) 달성!`);
+        } else if (game.gold < cost) {
+          stopAutoEnhance();
+          showToast('골드 부족으로 자동강화 중지');
+        } else {
+          executeManualEnhance();
+        }
+      }
+
+      if (game.isAutoHunt && game.enemyCurrHp > 0) {
+        if (!window._lastAutoAttackTime || timestamp - window._lastAutoAttackTime > 600) {
+          triggerPlayerAttack();
+          window._lastAutoAttackTime = timestamp;
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function saveGame() {
+      const data = {
+        gold: game.gold,
+        level: game.level,
+        scrolls: game.scrolls,
+        stageWorld: game.stageWorld,
+        stageWave: game.stageWave
+      };
+      SafeStorage.set(SAVE_KEY, JSON.stringify(data));
+      showToast('💾 게임 데이터 저장 완료!');
+      SFX.coin();
+    }
+
+    function loadGame() {
+      const raw = SafeStorage.get(SAVE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          game.gold = parsed.gold ?? game.gold;
+          game.level = parsed.level ?? game.level;
+          game.scrolls = parsed.scrolls ?? game.scrolls;
+          game.stageWorld = parsed.stageWorld ?? game.stageWorld;
+          game.stageWave = parsed.stageWave ?? game.stageWave;
+        } catch (e) {}
+      }
+    }
+
+    function resetGameData() {
+      SafeStorage.remove(SAVE_KEY);
+      game.gold = 120;
+      game.level = 0;
+      game.scrolls = 2;
+      game.scrollBonusRate = 0;
+      game.stageWorld = 1;
+      game.stageWave = 1;
+      game.isBoss = false;
+      game.isAutoHunt = false;
+      stopAutoEnhance();
+      spawnEnemy();
+      renderPlayerFighter();
+      updateUI();
+      showToast('🔄 게임이 초기화되었습니다.');
+    }
+
+    function initEventListeners() {
+      D.btnSound.addEventListener('click', () => {
+        SFX.enabled = !SFX.enabled;
+        D.btnSound.textContent = SFX.enabled ? '🔊' : '🔇';
+        showToast(SFX.enabled ? '효과음 켜짐' : '효과음 꺼짐');
+      });
+
+      D.btnUseScroll.addEventListener('click', useEnhanceScroll);
+      D.btnManualEnh.addEventListener('click', executeManualEnhance);
+      D.btnAutoEnh.addEventListener('click', toggleAutoEnhance);
+
+      D.arena.addEventListener('click', () => { triggerPlayerAttack(); });
+
+      D.btnAutoStart.addEventListener('click', () => {
+        game.isAutoHunt = true;
+        showToast('▶️ 자동사냥 시작');
+        updateUI();
+      });
+      D.btnAutoStop.addEventListener('click', () => {
+        game.isAutoHunt = false;
+        showToast('⏸ 자동사냥 정지');
+        updateUI();
+      });
+
+      D.btnSave.addEventListener('click', saveGame);
+      D.btnReset.addEventListener('click', () => { D.resetModal.classList.add('open'); });
+      D.btnModalCancel.addEventListener('click', () => { D.resetModal.classList.remove('open'); });
+      D.btnModalConfirm.addEventListener('click', () => {
+        D.resetModal.classList.remove('open');
+        resetGameData();
+      });
+
+      D.btnBossRetry.addEventListener('click', () => {
+        game.enemyCurrHp = game.enemyMaxHp;
+        game.bossTimer = BOSS_LIMIT_SEC;
+        showToast('🔥 보스전 재도전!');
+        updateUI();
+      });
+
+      D.btnPrevStage.addEventListener('click', () => {
+        if (game.stageWorld > 1) {
+          game.stageWorld--;
+          game.stageWave = 1;
+          game.isBoss = false;
+          spawnEnemy();
+          showToast(`Stage ${game.stageWorld} 이동`);
+        }
+      });
+      D.btnNextStage.addEventListener('click', () => {
+        game.stageWorld++;
+        game.stageWave = 1;
+        game.isBoss = false;
+        spawnEnemy();
+        showToast(`Stage ${game.stageWorld} 이동`);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadGame();
+      initEventListeners();
+      renderPlayerFighter();
+      spawnEnemy();
+      updateUI();
+      requestAnimationFrame((ts) => {
+        lastFrameTime = ts;
+        requestAnimationFrame(gameLoop);
+      });
+    });
+  </script>
+</body>
+</html>
+
+
