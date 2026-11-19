@@ -48,7 +48,7 @@
       padding: calc(8px + env(safe-area-inset-top)) 10px 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 5px;
       z-index: 20;
     }
 
@@ -124,16 +124,31 @@
     /* 강화 성공 폭죽 파티클 */
     .firework-particle {
       position: absolute;
-      width: 7px;
-      height: 7px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       pointer-events: none;
       z-index: 30;
+      box-shadow: 0 0 10px currentColor, 0 0 18px rgba(255,255,255,0.9);
       animation: fireworkBurst 0.6s ease-out forwards;
     }
     @keyframes fireworkBurst {
       0% { transform: translate(0, 0) scale(1); opacity: 1; }
       100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+    }
+    .upgrade-celebration-label {
+      position: absolute; top: 8px; left: 50%; z-index: 35; transform: translateX(-50%);
+      padding: 3px 7px; border: 1px solid #fde047; border-radius: 999px;
+      background: linear-gradient(90deg, #7c2d12, #a21caf, #1d4ed8); color: #fff7ad;
+      font-size: 9px; font-weight: 1000; white-space: nowrap; text-shadow: 0 1px 5px #000;
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.9); pointer-events: none;
+      animation: upgradeLabelBurst 0.95s ease-out forwards;
+    }
+    @keyframes upgradeLabelBurst {
+      0% { opacity: 0; transform: translate(-50%, 8px) scale(0.45); }
+      22% { opacity: 1; transform: translate(-50%, 0) scale(1.18); }
+      75% { opacity: 1; transform: translate(-50%, -2px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -12px) scale(0.9); }
     }
 
     /* 강화 실패 검은 연기 효과 */
@@ -378,6 +393,50 @@
       position: absolute; bottom: 23%; width: 48px; height: 48px;
       transform: translate(-50%, 50%); animation: splashBurst 0.28s ease-out forwards;
     }
+    .skill-impact {
+      --impact-color: #a3e635;
+      position: absolute; left: 50%; bottom: 23%; width: 94px; height: 94px;
+      transform: translate(-50%, 50%); display: grid; place-items: center; z-index: 28;
+      pointer-events: none; filter: drop-shadow(0 0 12px var(--impact-color));
+    }
+    .skill-impact::before, .skill-impact::after {
+      content: ''; position: absolute; inset: 5px; border: 3px solid var(--impact-color); border-radius: 50%;
+      box-shadow: 0 0 12px var(--impact-color), inset 0 0 12px var(--impact-color);
+      animation: skillRingBurst 0.55s cubic-bezier(0.12, 0.75, 0.2, 1) forwards;
+    }
+    .skill-impact::after { inset: 18px; border-style: dashed; animation-delay: 0.06s; }
+    .skill-impact-icon {
+      position: relative; font-size: 38px; line-height: 1;
+      animation: skillIconBurst 0.55s cubic-bezier(0.12, 0.75, 0.2, 1) forwards;
+    }
+    .skill-smash { --impact-color: #bef264; }
+    .skill-flame { --impact-color: #fb923c; }
+    .skill-acid { --impact-color: #d946ef; }
+    .skill-lightning { --impact-color: #38bdf8; }
+    .skill-berserk { --impact-color: #fb7185; }
+    .skill-celestial { --impact-color: #fde047; }
+    @keyframes skillRingBurst {
+      0% { opacity: 1; transform: scale(0.25) rotate(0deg); }
+      65% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.35) rotate(100deg); }
+    }
+    @keyframes skillIconBurst {
+      0% { opacity: 0; transform: scale(0.25) rotate(-25deg); }
+      30% { opacity: 1; transform: scale(1.3) rotate(8deg); }
+      100% { opacity: 0; transform: scale(0.8) rotate(20deg); }
+    }
+    .gold-fly {
+      position: fixed; z-index: 1000; pointer-events: none; white-space: nowrap;
+      padding: 3px 7px; border: 1px solid rgba(253, 224, 71, 0.9); border-radius: 999px;
+      background: rgba(69, 39, 4, 0.96); color: #fde047; font-size: 14px; font-weight: 900;
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.85); will-change: transform, opacity;
+    }
+    .gold-receive-pop { animation: goldReceivePop 0.3s ease-out; }
+    @keyframes goldReceivePop {
+      0% { transform: scale(1); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
+      55% { transform: scale(1.2); box-shadow: 0 0 18px rgba(250, 204, 21, 0.9); }
+      100% { transform: scale(1); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
+    }
     @keyframes splashBurst {
       0% { opacity: 1; transform: translate(-50%, 50%) scale(0.45); }
       100% { opacity: 0; transform: translate(-50%, 50%) scale(1.45); }
@@ -432,22 +491,34 @@
       flex: 0 0 auto; display: flex; flex-direction: column; gap: 3px;
     }
 
-    .skill-strip {
-      display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; height: 24px;
+    #skill-enhance-panel {
+      flex: 0 0 auto; padding: 5px; border: 1px solid #475569; border-radius: 10px;
+      background: rgba(8, 15, 30, 0.88);
     }
-
-    .skill-pill {
-      border-radius: 7px; border: 1px solid #334155; background: #131a2b;
-      display: flex; align-items: center; justify-content: center; gap: 2px;
-      font-size: 8.5px; font-weight: 800; cursor: pointer; padding: 0 2px; overflow: hidden;
+    .skill-panel-heading {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      margin-bottom: 4px; color: #c4b5fd; font-size: 10px; font-weight: 900;
     }
-    .skill-pill.unlocked {
-      background: linear-gradient(180deg, #14532d 0%, #166534 100%);
-      border-color: #84cc16; color: #f8fafc;
+    .skill-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .skill-card {
+      min-width: 0; padding: 3px; border: 1px solid #475569; border-radius: 7px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
     }
-    .skill-pill.locked {
-      opacity: 0.42; filter: grayscale(0.85); color: #94a3b8;
+    .skill-card.unlocked { border-color: #65a30d; box-shadow: inset 0 0 8px rgba(132, 204, 22, 0.13); }
+    .skill-card.locked { opacity: 0.55; }
+    .skill-card-head {
+      height: 13px; display: flex; align-items: center; gap: 3px; overflow: hidden;
+      color: #f8fafc; font-size: 9px; font-weight: 900; white-space: nowrap;
     }
+    .skill-card-cost { height: 10px; overflow: hidden; color: #fcd34d; font-size: 7.5px; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
+    .skill-card-actions { display: flex; gap: 3px; margin-top: 3px; }
+    .skill-upgrade-btn {
+      min-width: 0; flex: 1; height: 19px; border-radius: 5px; color: #fff; font-size: 8px;
+      font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .skill-upgrade-btn.gold { border: 1px solid #fbbf24; background: linear-gradient(#b45309, #78350f); }
+    .skill-upgrade-btn.scroll { border: 1px solid #c4b5fd; background: linear-gradient(#7c3aed, #4c1d95); }
+    .skill-upgrade-btn:disabled { opacity: 0.38; filter: grayscale(0.7); }
 
     .ctrl-strip {
       display: flex; align-items: center; gap: 4px; height: 32px;
@@ -554,6 +625,14 @@
           </div>
         </div>
       </div>
+
+      <div id="skill-enhance-panel">
+        <div class="skill-panel-heading">
+          <span>✨ 스킬 강화</span>
+          <span class="text-[8px] text-slate-400">골드 또는 주문서 1장</span>
+        </div>
+        <div id="skill-strip" class="skill-strip"></div>
+      </div>
     </section>
 
     <!-- 하단 사냥터 패널 -->
@@ -621,8 +700,6 @@
       </div>
 
       <div id="band-c-dock">
-        <div id="skill-strip" class="skill-strip"></div>
-
         <div class="ctrl-strip">
           <button id="btn-auto-start" class="mini-ctrl-btn bg-gradient-to-b from-emerald-600 to-emerald-800 border-emerald-400">
             ▶️ 자동사냥 시작
@@ -799,6 +876,7 @@
       isAutoHunt: false,
       isAutoEnhance: false,
       targetEnhLevel: 10,
+      skillLevels: {},
       bossTimer: BOSS_LIMIT_SEC
     };
 
@@ -932,11 +1010,14 @@
       }
     }
 
-    function getEnhanceCost(lv) { return Math.floor(50 * Math.pow(1.32, lv)); }
+    function getEnhanceCost(lv) {
+      const normalCost = Math.floor(50 * Math.pow(1.32, lv));
+      return getTotalEnhanceRate(lv) >= 100 ? Math.floor(normalCost * 0.5) : normalCost;
+    }
     function getPlayerAtk(lv) { return Math.floor(18 * Math.pow(1.22, lv)); }
 
     function getBaseEnhanceRate(lv) {
-      return Math.max(40, 100 - lv * 2.2);
+      return Math.max(1, 100 - lv * 0.099);
     }
 
     function getScrollStep(lv) {
@@ -945,9 +1026,13 @@
       return 5;
     }
 
+    function getSkillUpgradeCost(skill, skillLevel) {
+      return Math.floor(120 * Math.pow(1.8, skillLevel) * Math.pow(1.25, game.stageWorld - 1) * (skill.reqLv / 5));
+    }
+
     function getTotalEnhanceRate(lv) {
       const base = getBaseEnhanceRate(lv);
-      return Math.min(90, Math.round(base + game.scrollBonusRate));
+      return Math.min(100, Math.round((base + game.scrollBonusRate) * 10) / 10);
     }
 
     function updateUI() {
@@ -964,37 +1049,32 @@
 
       D.statAtk.textContent = atk;
       D.statCrit.textContent = `${Math.min(10 + Math.floor(lv * 0.8), 50)}%/150%`;
-      D.statRate.textContent = `${totalRate}%`;
+      D.statRate.textContent = `${Number(totalRate.toFixed(1))}%`;
       if (game.scrollBonusRate > 0) {
         D.statRate.className = 'text-[13px] font-black text-emerald-300 leading-tight';
       } else {
         D.statRate.className = 'text-[13px] font-black text-sky-400 leading-tight';
       }
 
-      let riskText = '유지';
-      let riskColor = 'text-emerald-400';
-      if (lv >= 20) {
-        riskText = '초기화 위험';
-        riskColor = 'text-rose-500 font-black animate-pulse';
-      } else if (lv >= 10) {
-        riskText = '-1강 하락';
-        riskColor = 'text-amber-400';
-      }
+      const riskText = lv > 0 ? '-1강 하락' : '0강 유지';
+      const riskColor = lv > 0 ? 'text-amber-400' : 'text-emerald-400';
       D.statRisk.className = `text-[12px] font-black ${riskColor} leading-tight`;
       D.statRisk.textContent = riskText;
 
       D.uiScrollCount.textContent = game.scrolls;
       D.uiScrollBonus.textContent = `+${Math.round(game.scrollBonusRate)}% 적용`;
       const step = getScrollStep(lv);
-      D.btnUseScroll.textContent = `주문서 사용 (+${step}%)`;
-      if (totalRate >= 90) {
-        D.btnUseScroll.textContent = `최대 확률(90%)`;
+      const remainingBonus = Math.max(0, 100 - getBaseEnhanceRate(lv) - game.scrollBonusRate);
+      const batchCount = Math.min(game.scrolls, Math.ceil(remainingBonus / step));
+      D.btnUseScroll.textContent = `강화주문서 일괄 사용 (${batchCount}장)`;
+      if (totalRate >= 100) {
+        D.btnUseScroll.textContent = `최대 확률(100%)`;
         D.btnUseScroll.disabled = true;
       } else {
-        D.btnUseScroll.disabled = game.scrolls <= 0;
+        D.btnUseScroll.disabled = game.scrolls <= 0 || batchCount <= 0;
       }
 
-      D.enhCost.textContent = `${cost.toLocaleString()} G`;
+      D.enhCost.textContent = `${cost.toLocaleString()} G${totalRate >= 100 ? ' · 50% 할인' : ''}`;
       D.btnManualEnh.disabled = game.gold < cost;
 
       const theme = getCurrentStageInfo();
@@ -1030,13 +1110,74 @@
       D.skillStrip.innerHTML = '';
       SKILLS.forEach(s => {
         const isUnlocked = game.level >= s.reqLv;
-        const pill = document.createElement('div');
-        pill.className = `skill-pill ${isUnlocked ? 'unlocked' : 'locked'}`;
-        pill.innerHTML = `<span>${s.icon}</span><span class="truncate">+${s.reqLv}</span>`;
-        pill.title = `${s.name} (요구 +${s.reqLv}): ${s.desc}`;
-        pill.addEventListener('click', () => { showToast(`${s.name}: ${s.desc}`); });
-        D.skillStrip.appendChild(pill);
+        const skillLevel = game.skillLevels[s.id] || 0;
+        const upgradeCost = getSkillUpgradeCost(s, skillLevel);
+        const scrollCost = skillLevel + 1;
+        const card = document.createElement('div');
+        card.className = `skill-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+        card.title = `${s.name}: ${s.desc} · 강화 1회당 피해 +25%, 발동 확률 +2%`;
+
+        const heading = document.createElement('div');
+        heading.className = 'skill-card-head';
+        heading.innerHTML = `<span>${s.icon}</span><span class="truncate">${s.name} Lv.${skillLevel}</span>`;
+        card.appendChild(heading);
+
+        const costLine = document.createElement('div');
+        costLine.className = 'skill-card-cost';
+        costLine.textContent = isUnlocked ? `강화비 ${upgradeCost.toLocaleString()}G 또는 주문서 ${scrollCost}장` : `무기 +${s.reqLv}에서 해금`;
+        card.appendChild(costLine);
+
+        const actions = document.createElement('div');
+        actions.className = 'skill-card-actions';
+
+        const goldButton = document.createElement('button');
+        goldButton.className = 'skill-upgrade-btn gold';
+        goldButton.textContent = '🪙 골드';
+        goldButton.title = `골드 ${upgradeCost.toLocaleString()}G로 강화`;
+        goldButton.disabled = !isUnlocked || game.gold < upgradeCost;
+        goldButton.addEventListener('click', () => upgradeSkill(s, 'gold'));
+
+        const scrollButton = document.createElement('button');
+        scrollButton.className = 'skill-upgrade-btn scroll';
+        scrollButton.textContent = `📜 ${scrollCost}장`;
+        scrollButton.title = `강화주문서 ${scrollCost}장으로 강화`;
+        scrollButton.disabled = !isUnlocked || game.scrolls < scrollCost;
+        scrollButton.addEventListener('click', () => upgradeSkill(s, 'scroll'));
+
+        actions.append(goldButton, scrollButton);
+        card.appendChild(actions);
+        D.skillStrip.appendChild(card);
       });
+    }
+
+    function upgradeSkill(skill, payment) {
+      if (game.level < skill.reqLv) {
+        showToast(`${skill.name}은(는) 무기 +${skill.reqLv}에서 해금됩니다.`);
+        return;
+      }
+      const skillLevel = game.skillLevels[skill.id] || 0;
+      if (payment === 'scroll') {
+        const scrollCost = skillLevel + 1;
+        if (game.scrolls < scrollCost) {
+          showToast(`📜 강화주문서가 부족합니다. ${scrollCost}장이 필요합니다.`);
+          return;
+        }
+        game.scrolls -= scrollCost;
+      } else {
+        const cost = getSkillUpgradeCost(skill, skillLevel);
+        if (game.gold < cost) {
+          showToast(`골드가 부족합니다. ${cost.toLocaleString()}G가 필요합니다.`);
+          return;
+        }
+        game.gold -= cost;
+      }
+      game.skillLevels[skill.id] = skillLevel + 1;
+      SFX.success();
+      spawnUpgradeCelebration('✨ 스킬 강화 성공!');
+      showToast(payment === 'scroll'
+        ? `✨ ${skill.name} 스킬 Lv.${skillLevel + 1} 강화 성공! 주문서 ${skillLevel + 1}장 사용`
+        : `✨ ${skill.name} 스킬 Lv.${skillLevel + 1} 강화 성공!`);
+      updateUI();
     }
 
     function renderPlayerFighter(isAttack = false) {
@@ -1081,17 +1222,23 @@
         return;
       }
       const currentTotal = getTotalEnhanceRate(game.level);
-      if (currentTotal >= 90) {
-        showToast('⚠️ 강화 확률은 최대 90%까지만 올릴 수 있습니다!');
+      if (currentTotal >= 100) {
+        showToast('⚠️ 강화 확률은 최대 100%입니다!');
         return;
       }
 
       const step = getScrollStep(game.level);
-      game.scrolls--;
-      game.scrollBonusRate = Math.min(90 - getBaseEnhanceRate(game.level), game.scrollBonusRate + step);
+      const remainingBonus = Math.max(0, 100 - getBaseEnhanceRate(game.level) - game.scrollBonusRate);
+      const scrollsToUse = Math.min(game.scrolls, Math.ceil(remainingBonus / step));
+      if (scrollsToUse <= 0) {
+        showToast('⚠️ 강화 확률이 이미 최대치입니다.');
+        return;
+      }
+      game.scrolls -= scrollsToUse;
+      game.scrollBonusRate = Math.min(100 - getBaseEnhanceRate(game.level), game.scrollBonusRate + step * scrollsToUse);
 
       SFX.scroll();
-      showToast(`📜 강화주문서 사용! 성공 확률이 상승했습니다.`);
+      showToast(`📜 강화주문서 ${scrollsToUse}장 일괄 사용! 성공 확률이 ${getTotalEnhanceRate(game.level)}%가 되었습니다.`);
       updateUI();
     }
 
@@ -1102,7 +1249,7 @@
       const centerY = boxRect.height / 2;
       const colors = ['#fde047', '#f43f5e', '#38bdf8', '#4ade80', '#c084fc'];
 
-      for (let i = 0; i < 18; i++) {
+      for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
         p.className = 'firework-particle';
         p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -1110,7 +1257,7 @@
         p.style.top = `${centerY}px`;
 
         const angle = Math.random() * Math.PI * 2;
-        const dist = 35 + Math.random() * 50;
+        const dist = 42 + Math.random() * 58;
         const dx = Math.cos(angle) * dist;
         const dy = Math.sin(angle) * dist;
         p.style.setProperty('--dx', `${dx}px`);
@@ -1119,6 +1266,18 @@
         D.emblemBox.appendChild(p);
         setTimeout(() => p.remove(), 600);
       }
+    }
+
+    function spawnUpgradeCelebration(label) {
+      D.emblemBox.classList.remove('flash-up');
+      void D.emblemBox.offsetWidth;
+      D.emblemBox.classList.add('flash-up');
+      spawnFireworks();
+      const badge = document.createElement('div');
+      badge.className = 'upgrade-celebration-label';
+      badge.textContent = label;
+      D.emblemBox.appendChild(badge);
+      setTimeout(() => badge.remove(), 950);
     }
 
     // 강화 실패 시 검은 연기 효과 생성 함수
@@ -1157,10 +1316,7 @@
         game.level++;
         SFX.success();
         showToast(`🎉 강화 성공! (+${game.level})`);
-        D.emblemBox.classList.remove('flash-up');
-        void D.emblemBox.offsetWidth;
-        D.emblemBox.classList.add('flash-up');
-        spawnFireworks();
+        spawnUpgradeCelebration('⚒️ 무기 강화 성공!');
       } else {
         SFX.fail();
         D.emblemBox.classList.remove('shake-box');
@@ -1168,14 +1324,12 @@
         D.emblemBox.classList.add('shake-box');
         spawnSmoke();
 
-        if (game.level >= 20 && Math.random() < 0.28) {
-          game.level = 0;
-          showToast('⚠️ 대참사! 강화가 0으로 초기화되었습니다!');
-        } else if (game.level >= 10) {
+        if (game.level > 0) {
+          const previousLevel = game.level;
           game.level--;
-          showToast('❌ 강화 실패... 수치가 1 하락했습니다.');
+          showToast(`❌ 강화 실패... +${previousLevel}에서 +${game.level}(으)로 1단계 하락했습니다.`);
         } else {
-          showToast('❌ 강화에 실패했습니다.');
+          showToast('❌ 강화 실패... +0강은 유지됩니다.');
         }
       }
       renderPlayerFighter();
@@ -1217,7 +1371,9 @@
       if (unlockedSkills.length > 0) {
         for (let i = unlockedSkills.length - 1; i >= 0; i--) {
           const sk = unlockedSkills[i];
-          if (Math.random() < sk.chance) { selectedSkill = sk; break; }
+          const skillLevel = game.skillLevels[sk.id] || 0;
+          const upgradedChance = Math.min(0.6, sk.chance + skillLevel * 0.02);
+          if (Math.random() < upgradedChance) { selectedSkill = sk; break; }
         }
       }
 
@@ -1279,9 +1435,14 @@
       const critChance = Math.min(10 + game.level * 0.8, 50);
       const isCrit = Math.random() * 100 < critChance;
 
-      let mult = skill ? skill.mult : 1.0;
+      const skillLevel = skill ? (game.skillLevels[skill.id] || 0) : 0;
+      let mult = skill ? skill.mult * (1 + skillLevel * 0.25) : 1.0;
       let finalDmg = Math.floor(baseAtk * mult * (isCrit ? 1.5 : 1.0) * (0.9 + Math.random() * 0.2));
 
+      if (game.isBoss) animateGoldToCounter(
+        Math.max(2, Math.floor(game.stageWorld * (2 + Math.random() * 3))),
+        D.enemyFighter
+      );
       game.enemyCurrHp -= finalDmg;
       SFX.hit(isCrit);
 
@@ -1296,6 +1457,7 @@
 
       if (skill) {
         showSkillBanner(skill.name);
+        createSkillImpact(skill);
         if (skill.id === 'lightning') createLightningBeam();
         if (skill.id === 'celestial') createCelestialNeedle();
       }
@@ -1304,6 +1466,46 @@
         handleEnemyDeath();
       }
       updateUI();
+    }
+
+    function animateGoldToCounter(amount, sourceElement) {
+      const sourceRect = sourceElement.getBoundingClientRect();
+      const goldRect = D.gold.parentElement.getBoundingClientRect();
+      const startX = sourceRect.left + sourceRect.width / 2;
+      const startY = sourceRect.top + sourceRect.height * 0.35;
+      const endX = goldRect.left + goldRect.width / 2;
+      const endY = goldRect.top + goldRect.height / 2;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const coin = document.createElement('div');
+      coin.className = 'gold-fly';
+      coin.textContent = `🪙 +${amount}G`;
+      coin.style.left = `${startX}px`;
+      coin.style.top = `${startY}px`;
+      document.body.appendChild(coin);
+      const flight = coin.animate([
+        { transform: 'translate(-50%, -50%) scale(0.8)', opacity: 0 },
+        { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 - 38}px)) scale(1.1)`, opacity: 1, offset: 0.22 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.3)`, opacity: 0.15 }
+      ], { duration: 620, easing: 'cubic-bezier(0.2, 0.75, 0.25, 1)', fill: 'forwards' });
+      flight.onfinish = () => {
+        coin.remove();
+        game.gold += amount;
+        updateUI();
+        D.gold.parentElement.classList.remove('gold-receive-pop');
+        void D.gold.parentElement.offsetWidth;
+        D.gold.parentElement.classList.add('gold-receive-pop');
+        setTimeout(() => D.gold.parentElement.classList.remove('gold-receive-pop'), 320);
+      };
+    }
+
+    function createSkillImpact(skill) {
+      const impact = document.createElement('div');
+      impact.className = `skill-impact skill-${skill.id}`;
+      impact.style.left = `${game.enemyX}%`;
+      impact.innerHTML = `<span class="skill-impact-icon">${skill.icon}</span>`;
+      D.vfxLayer.appendChild(impact);
+      setTimeout(() => impact.remove(), 620);
     }
 
     function createVenomSplash(xPct, color) {
@@ -1357,24 +1559,19 @@
     }
 
     function handleEnemyDeath() {
-      const rewardGold = game.isBoss ? 250 * game.stageWorld : Math.floor(18 * Math.pow(1.3, game.stageWorld - 1) * Math.pow(1.15, game.stageWave - 1));
-      game.gold += rewardGold;
+      const rewardGold = game.isBoss ? 300 * game.stageWorld : Math.floor(18 * Math.pow(1.3, game.stageWorld - 1) * Math.pow(1.15, game.stageWave - 1));
+      animateGoldToCounter(rewardGold, D.enemyFighter);
       SFX.coin();
 
       if (game.isBoss) {
-        const dropScroll = Math.random() < 0.45;
-        if (dropScroll) {
-          game.scrolls++;
-          SFX.scroll();
-          showToast(`🏆 보스 처치! 🪙+${rewardGold}G & 📜강화주문서 획득!`);
-        } else {
-          showToast(`🏆 보스 처치! 🪙+${rewardGold}G 획득!`);
-        }
-
+        const bossLevel = game.stageWorld * 10;
+        const scrollDropCount = Math.max(1, Math.ceil(bossLevel / 20));
+        game.scrolls += scrollDropCount;
+        SFX.scroll();
         game.isBoss = false;
         game.stageWorld++;
         game.stageWave = 1;
-        showToast(`✨ 스테이지 ${game.stageWorld} 진입!`);
+        showToast(`🏆 Lv.${bossLevel} 보스 처치! 🪙+${rewardGold}G · 📜주문서 ${scrollDropCount}장 · ✨Stage ${game.stageWorld} 진입`);
       } else {
         showToast(`🪙 골드 +${rewardGold.toLocaleString()} 획득!`);
         game.stageWave++;
@@ -1451,7 +1648,8 @@
         level: game.level,
         scrolls: game.scrolls,
         stageWorld: game.stageWorld,
-        stageWave: game.stageWave
+        stageWave: game.stageWave,
+        skillLevels: game.skillLevels
       };
       SafeStorage.set(SAVE_KEY, JSON.stringify(data));
       showToast('💾 게임 데이터 저장 완료!');
@@ -1468,6 +1666,7 @@
           game.scrolls = parsed.scrolls ?? game.scrolls;
           game.stageWorld = parsed.stageWorld ?? game.stageWorld;
           game.stageWave = parsed.stageWave ?? game.stageWave;
+          game.skillLevels = parsed.skillLevels ?? {};
         } catch (e) {}
       }
     }
@@ -1478,6 +1677,7 @@
       game.level = 0;
       game.scrolls = 2;
       game.scrollBonusRate = 0;
+      game.skillLevels = {};
       game.stageWorld = 1;
       game.stageWave = 1;
       game.isBoss = false;
